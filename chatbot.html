@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot for Gyan Setu</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-accent: #4F46E5;
+            --dark-bg: #0F172A;
+            --card-bg: #1E293B;
+            --border-color: #334155;
+            --text-primary: #F8FAFC;
+            --text-secondary: #CBD5E1;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-secondary);
+        }
+
+        /* Chat Bubble */
+        .chat-bubble {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        .chat-bubble:hover {
+            transform: scale(1.1);
+        }
+        .chat-bubble svg {
+            width: 32px;
+            height: 32px;
+            color: white;
+        }
+
+        /* Chat Window */
+        .chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 90%;
+            max-width: 400px;
+            height: 500px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
+            
+            /* Animation for opening/closing */
+            opacity: 0;
+            transform: translateY(20px);
+            pointer-events: none;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .chat-window.open {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        /* Chat Header */
+        .chat-header {
+            padding: 1rem;
+            background-color: rgba(15, 23, 42, 0.7);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        /* Message Display Area */
+        .message-container {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .message {
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+        }
+        .message .content {
+            padding: 10px 15px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+        .message.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+        .message.user .content {
+            background-color: var(--primary-accent);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+        .message.ai {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+        .message.ai .content {
+            background-color: #334155;
+            color: var(--text-primary);
+            border-bottom-left-radius: 2px;
+        }
+        .loading-indicator {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+        }
+        .loading-indicator span {
+            height: 8px;
+            width: 8px;
+            margin: 0 2px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .loading-indicator .bounce1 { animation-delay: -0.32s; }
+        .loading-indicator .bounce2 { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
+        }
+
+        /* Input Form */
+        .chat-input-form {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.7);
+        }
+        .chat-input-form input {
+            flex-grow: 1;
+            background-color: #334155;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+        }
+        .chat-input-form button {
+            background-color: var(--primary-accent);
+            border: none;
+            color: white;
+            padding: 0 16px;
+            margin-left: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- This is a placeholder for your main website content -->
+    <div style="padding: 2rem;">
+        <h1>Your Gyan Setu LMS Page</h1>
+        <p>This is where the content of your website (like the dashboard) would go.</p>
+        <p>The chatbot will float on top of this content.</p>
+    </div>
+
+    <!-- Chat Bubble -->
+    <div class="chat-bubble" id="chat-bubble">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.76c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+        </svg>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="chat-window" id="chat-window">
+        <div class="chat-header">Gyan Setu AI Assistant</div>
+        <div class="message-container" id="message-container">
+            <!-- Messages will be added here dynamically -->
+        </div>
+        <form class="chat-input-form" id="chat-form">
+            <input type="text" id="chat-input" placeholder="Ask anything..." autocomplete="off">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const chatBubble = document.getElementById('chat-bubble');
+            const chatWindow = document.getElementById('chat-window');
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const messageContainer = document.getElementById('message-container');
+
+            let messages = [
+                { role: 'ai', content: 'Hello! I am the Gyan Setu AI Assistant. How can I help you today?' }
+            ];
+
+            // Toggle chat window visibility
+            chatBubble.addEventListener('click', () => {
+                chatWindow.classList.toggle('open');
+            });
+            
+            // Function to add a message to the UI
+            const addMessage = (role, content) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${role}`;
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'content';
+                contentDiv.textContent = content;
+                messageDiv.appendChild(contentDiv);
+                messageContainer.appendChild(messageDiv);
+                // Scroll to the bottom
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            };
+
+            // Function to show the loading indicator
+            const showLoading = () => {
+                const loadingDiv = document.createElement('div');
+                loadingDiv.id = 'loading';
+                loadingDiv.className = 'message ai';
+                loadingDiv.innerHTML = `
+                    <div class="loading-indicator">
+                        <span class="bounce1"></span>
+                        <span class="bounce2"></span>
+                        <span class="bounce3"></span>
+                    </div>`;
+                messageContainer.appendChild(loadingDiv);
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            };
+
+            // Function to hide the loading indicator
+            const hideLoading = () => {
+                const loadingDiv = document.getElementById('loading');
+                if (loadingDiv) {
+                    loadingDiv.remove();
+                }
+            };
+            
+            // Initial render of messages
+            messages.forEach(msg => addMessage(msg.role, msg.content));
+
+            // Handle form submission
+            chatForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const userInput = chatInput.value.trim();
+                if (!userInput) return;
+
+                // Add user message to UI
+                addMessage('user', userInput);
+                messages.push({ role: 'user', content: userInput });
+                chatInput.value = '';
+
+                // Show loading indicator
+                showLoading();
+
+                // Call the Gemini API
+                try {
+                    const aiResponse = await callGeminiAPI(userInput);
+                    addMessage('ai', aiResponse);
+                    messages.push({ role: 'ai', content: aiResponse });
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    addMessage('ai', 'Sorry, I encountered an error. Please try again.');
+                } finally {
+                    hideLoading();
+                }
+            });
+
+            // --- Gemini API Call ---
+            // This function handles the network request to the Gemini API.
+            async function callGeminiAPI(userQuery) {
+                // IMPORTANT: In a real production app, the API key should not be exposed here.
+                // We leave it empty because the platform will provide it.
+                const API_KEY = ""; 
+                const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+                
+                const payload = {
+                    // We structure the conversation history for the model
+                    contents: [
+                        { parts: [{ text: userQuery }] }
+                    ]
+                };
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Extract the text from the response
+                const candidate = data.candidates?.[0];
+                const text = candidate?.content?.parts?.[0]?.text;
+
+                if (!text) {
+                    throw new Error("No text found in API response.");
+                }
+
+                return text;
+            }
+        });
+    </script>
+</body>
+</html>
