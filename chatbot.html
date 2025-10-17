@@ -289,8 +289,7 @@
                 }
             });
 
-            // --- Gemini API Call ---
-            // This function handles the network request to the Gemini API.
+            // --- REAL GEMINI API Call ---
             async function callGeminiAPI(userQuery) {
                 // IMPORTANT: In a real production app, the API key should not be exposed here.
                 // We leave it empty because the platform will provide it.
@@ -298,10 +297,7 @@
                 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
                 
                 const payload = {
-                    // We structure the conversation history for the model
-                    contents: [
-                        { parts: [{ text: userQuery }] }
-                    ]
+                    contents: [ { parts: [{ text: userQuery }] } ]
                 };
 
                 const response = await fetch(API_URL, {
@@ -315,10 +311,7 @@
                 }
 
                 const data = await response.json();
-                
-                // Extract the text from the response
-                const candidate = data.candidates?.[0];
-                const text = candidate?.content?.parts?.[0]?.text;
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
                 if (!text) {
                     throw new Error("No text found in API response.");
@@ -330,3 +323,4 @@
     </script>
 </body>
 </html>
+
